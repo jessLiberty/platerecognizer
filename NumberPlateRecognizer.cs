@@ -62,6 +62,7 @@ namespace WindowsFormsApp36
                         {
                             using (VectorOfPoint countour = countours[i])
                             {
+                                //
                                 Rectangle rect = CvInvoke.BoundingRectangle(countour);
                                 if (rect.Height >(plateSize.Height >> 1))
                                 {
