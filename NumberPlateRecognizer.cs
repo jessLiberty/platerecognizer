@@ -15,7 +15,7 @@ using Emgu;
 
 namespace WindowsFormsApp36
 {
-    class NumberPlateRecognizer
+    class NumberPlateRecognizer : DisposableObject
     {
         private Tesseract ocr;
 
@@ -23,6 +23,47 @@ namespace WindowsFormsApp36
         {
             ocr = new Tesseract(tessdatapath, lang, OcrEngineMode.TesseractLstmCombined);
         }
+
+        private void FindLicensePlate(VectorOfVectorOfPoint contours,
+              int[,] hierachy,
+             int index,
+             IInputArray gray,
+             IInputArray canny,
+             List<IInputOutputArray> licensePlateImageList,
+             List<IInputOutputArray> filteredLicencePlateImageList,
+             List<RotatedRect> detectedLicensePlateRegionList,
+             List<string> licenses
+
+    )
+        {
+            for (; index >= 0; index = hierachy[index, 0])
+            {
+                int numberOfChildren = GetNumberOfChildren(hierachy, index);
+                if (numberOfChildren == 0)
+                    continue;
+
+                using (VectorOfPoint contour = contours[index])
+                {
+                    if (CvInvoke.ContourArea(contour) > 400)
+                    {
+                        if (numberOfChildren < 3)
+
+                        {
+                            FindLicensePlate(contours, hierachy, hierachy[index, 2), gray, canny, licensePlateImageList, filteredLicencePlateImageList, licenses);
+                            continue;
+                        }
+                        RotatedRect box = CvInvoke.MinAreaRect(contour);
+                        if (box.Angle < -45.0)
+                        {
+                            float tmp = box.Size.Width;
+
+                        }
+
+                    }
+
+                }
+
+            }
 
         private int GetNumberOfChildren(int [,] hierachy,int index) 
         {
@@ -71,20 +112,36 @@ namespace WindowsFormsApp36
 
                                     rect.Width += 2;
                                     rect.Height += 2;
-                                }
 
+                                    Rectangle roi = new Rectangle(Point.Empty, plate.Size);
+
+                                    rect.Intersect(roi);
+
+                                    CvInvoke.Rectangle(plateMask, rect, new MCvScalar(), -1);
+                                }
+                               
 
                             }
                              
                         }
-
+                        thresh.SetTo(new MCvScalar(), plateMask);
 
                     }
+                   
+
 
                 }
 
             }
+            CvInvoke.Erode(thresh, thresh, null, new Point(-1, 1), 1, BorderType.Constant, CvInvoke.MorphologyDefaultBorderValue);
+            CvInvoke.Dilate(thresh, thresh, null, new Point(-1, -1), 1, BorderType.Constant, CvInvoke.MorphologyDefaultBorderValue);
 
+            return thresh;
+
+        }
+        protected override void DisposeObject()
+        {
+            ocr.Dispose();
         }
     }
 }
